@@ -13,11 +13,12 @@ import TaskCard from "./TaskCard";
 import { IconPlus } from "@tabler/icons-react";
 
 function KanbanBoard({ state }) {
-  const defaultCols =
-    state?.state?.columns?.map((col) => ({
-      id: col?.id,
-      title: col?.title,
-    })) || [];
+  // Default columns with specific IDs
+  const defaultCols = [
+    { id: "todo", title: "Todo" },
+    { id: "doing", title: "Work in Progress" },
+    { id: "done", title: "Done" },
+  ];
 
   const defaultTasks =
     state?.state?.tasks?.map((task) => ({
@@ -162,22 +163,11 @@ function KanbanBoard({ state }) {
       });
     } else {
       const isActiveATask = active.data.current?.type === "Task";
-      const isOverATask = over.data.current?.type === "Task";
-      if (isActiveATask && isOverATask) {
-        setTasks((tasks) => {
-          const activeIndex = tasks.findIndex((t) => t.id === active.id);
-          const overIndex = tasks.findIndex((t) => t.id === over.id);
-          if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-            tasks[activeIndex].columnId = tasks[overIndex].columnId;
-            return arrayMove(tasks, activeIndex, overIndex - 1);
-          }
-          return arrayMove(tasks, activeIndex, overIndex);
-        });
-      } else if (isActiveATask) {
+      if (isActiveATask) {
         setTasks((tasks) => {
           const activeIndex = tasks.findIndex((t) => t.id === active.id);
           tasks[activeIndex].columnId = over.id;
-          return arrayMove(tasks, activeIndex, activeIndex);
+          return [...tasks];
         });
       }
     }
@@ -190,29 +180,18 @@ function KanbanBoard({ state }) {
     if (active.id === over.id) return;
 
     const isActiveATask = active.data.current?.type === "Task";
-    const isOverATask = over.data.current?.type === "Task";
-    if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === active.id);
-        const overIndex = tasks.findIndex((t) => t.id === over.id);
-        if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-          tasks[activeIndex].columnId = tasks[overIndex].columnId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
-        }
-        return arrayMove(tasks, activeIndex, overIndex);
-      });
-    } else if (isActiveATask) {
+    if (isActiveATask) {
       setTasks((tasks) => {
         const activeIndex = tasks.findIndex((t) => t.id === active.id);
         tasks[activeIndex].columnId = over.id;
-        return arrayMove(tasks, activeIndex, activeIndex);
+        return [...tasks];
       });
     }
   }
 }
 
 function generateId() {
-  return Math.floor(Math.random() * 10001);
+  return Math.floor(Math.random() * 10001).toString();
 }
 
 export default KanbanBoard;

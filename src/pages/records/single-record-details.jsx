@@ -21,7 +21,7 @@ function SingleRecordDetails() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [processing, setIsProcessing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(
-    state.analysisResult || "",
+    state.analysisResult || ""
   );
   const [filename, setFilename] = useState("");
   const [filetype, setFileType] = useState("");
@@ -74,19 +74,32 @@ function SingleRecordDetails() {
 
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-      const prompt = `You are an expert cancer and any disease diagnosis analyst. Use your knowledge base to answer questions about giving personalized recommended treatments.
-        give a detailed treatment plan for me, make it more readable, clear and easy to understand make it paragraphs to make it more readable
-        `;
+      const prompt = `
+        Analyze the motor nameplate information in the uploaded image. Extract all data, including:
+        - Voltage, current, power, speed, frequency, efficiency, and phase.
+        - Manufacturer details and compliance standards.
+        - Operational characteristics like duty cycle and temperature rating.
+        
+        Provide:
+        1. A detailed explanation of the motor's configuration.
+        2. Typical applications in various industries.
+        3. Innovative inventions or solutions that can be developed using this motor, leveraging its specifications.
+
+        Format the output as readable paragraphs for technical users.
+      `;
 
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
       const text = response.text();
+
       setAnalysisResult(text);
+
       const updatedRecord = await updateRecord({
         documentID: state.id,
         analysisResult: text,
         kanbanRecords: "",
       });
+
       setUploadSuccess(true);
       setIsModalOpen(false); // Close the modal after a successful upload
       setFilename("");
@@ -100,54 +113,67 @@ function SingleRecordDetails() {
     }
   };
 
+
+
   const processTreatmentPlan = async () => {
     setIsProcessing(true);
-
+  
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-
+  
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-
-    const prompt = `Your role and goal is to be an that will be using this treatment plan ${analysisResult} to create Columns:
-                - Todo: Tasks that need to be started
-                - Doing: Tasks that are in progress
-                - Done: Tasks that are completed
-          
-                Each task should include a brief description. The tasks should be categorized appropriately based on the stage of the treatment process.
-          
-                Please provide the results in the following  format for easy front-end display no quotating or what so ever just pure the structure below:
-
-                {
-                  "columns": [
-                    { "id": "todo", "title": "Todo" },
-                    { "id": "doing", "title": "Work in progress" },
-                    { "id": "done", "title": "Done" }
-                  ],
-                  "tasks": [
-                    { "id": "1", "columnId": "todo", "content": "Example task 1" },
-                    { "id": "2", "columnId": "todo", "content": "Example task 2" },
-                    { "id": "3", "columnId": "doing", "content": "Example task 3" },
-                    { "id": "4", "columnId": "doing", "content": "Example task 4" },
-                    { "id": "5", "columnId": "done", "content": "Example task 5" }
-                  ]
-                }
-                            
-                `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    const parsedResponse = JSON.parse(text);
-
-    console.log(text);
-    console.log(parsedResponse);
-    const updatedRecord = await updateRecord({
-      documentID: state.id,
-      kanbanRecords: text,
-    });
-    console.log(updatedRecord);
-    navigate("/screening-schedules", );
-    setIsProcessing(false);
+  
+    const prompt = `
+      Analyze the motor nameplate information provided in the analysis result: ${analysisResult}. 
+      Extract and list all the specifications and configurations of the motor. 
+      Include details like:
+      - Motor type (e.g., AC/DC)
+      - Voltage rating
+      - Current rating
+      - Power output
+      - Efficiency
+      - Speed (RPM)
+      - Frequency
+      - Phase type (single-phase/three-phase)
+      - Manufacturer details
+      - Any other technical details available.
+  
+      Present the results as a structured JSON list:
+      {
+        "specifications": [
+          { "key": "Motor Type", "value": "AC" },
+          { "key": "Voltage Rating", "value": "230V" },
+          { "key": "Current Rating", "value": "10A" },
+          ...
+        ]
+      }
+    `;
+  
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+  
+      // Strip code block markers if present
+      const cleanedText = text.replace(/```json|```/g, "").trim();
+  
+      // Parse the cleaned JSON
+      const parsedResponse = JSON.parse(cleanedText);
+  
+      console.log(parsedResponse);
+  
+      const updatedRecord = await updateRecord({
+        documentID: state.id,
+        kanbanRecords: cleanedText,
+      });
+  
+      navigate("/screening-schedules");
+    } catch (error) {
+      console.error("Error processing motor specifications:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
+  
 
   return (
     <div className="flex flex-wrap gap-[26px]">
@@ -157,7 +183,7 @@ function SingleRecordDetails() {
         className="mt-6 inline-flex items-center gap-x-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-neutral-700 dark:bg-[#13131a] dark:text-white dark:hover:bg-neutral-800"
       >
         <IconFileUpload />
-        Upload Reports
+        Upload Motor Nameplate
       </button>
       <FileUploadModal
         isOpen={isModalOpen}
@@ -176,10 +202,10 @@ function SingleRecordDetails() {
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-[#13131a]">
                 <div className="border-b border-gray-200 px-6 py-4 dark:border-neutral-700">
                   <h2 className="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-                    Personalized AI-Driven Treatment Plan
+                    Motor Nameplate Analysis
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-neutral-400">
-                    A tailored medical strategy leveraging advanced AI insights.
+                    Detailed insights from the motor nameplate data.
                   </p>
                 </div>
                 <div className="flex w-full flex-col px-6 py-4 text-white">
@@ -197,7 +223,7 @@ function SingleRecordDetails() {
                       onClick={processTreatmentPlan}
                       className="inline-flex items-center gap-x-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800"
                     >
-                      View Treatment plan
+                      View Tasks
                       <IconChevronRight size={20} />
                       {processing && (
                         <IconProgress
@@ -210,9 +236,7 @@ function SingleRecordDetails() {
                 </div>
                 <div className="grid gap-3 border-t border-gray-200 px-6 py-4 md:flex md:items-center md:justify-between dark:border-neutral-700">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-neutral-400">
-                      <span className="font-semibold text-gray-800 dark:text-neutral-200"></span>{" "}
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-neutral-400"></p>
                   </div>
                   <div>
                     <div className="inline-flex gap-x-2"></div>

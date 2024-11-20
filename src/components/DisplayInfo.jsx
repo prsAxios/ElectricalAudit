@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   IconAlertCircle,
-  IconCircleDashedCheck,
+  IconFileText,
   IconFolder,
-  IconHourglassHigh,
-  IconUserScan,
+  IconClipboardCheck,
+  IconTools,
 } from "@tabler/icons-react";
 import { usePrivy } from "@privy-io/react-auth";
 import MetricsCard from "./MetricsCard"; // Adjust the import path
@@ -17,57 +17,52 @@ const DisplayInfo = () => {
   const { fetchUserRecords, records, fetchUserByEmail } = useStateContext();
   const [metrics, setMetrics] = useState({
     totalFolders: 0,
-    aiPersonalizedTreatment: 0,
-    totalScreenings: 0,
-    completedScreenings: 0,
-    pendingScreenings: 0,
-    overdueScreenings: 0,
+    motorSpecifications: 0,
+    auditReports: 0,
+    completedAudits: 0,
+    pendingAudits: 0,
+    overdueAudits: 0,
   });
 
   useEffect(() => {
     if (user) {
       fetchUserByEmail(user.email.address)
         .then(() => {
-          console.log(records);
           const totalFolders = records.length;
-          let aiPersonalizedTreatment = 0;
-          let totalScreenings = 0;
-          let completedScreenings = 0;
-          let pendingScreenings = 0;
-          let overdueScreenings = 0;
+          let motorSpecifications = 0;
+          let auditReports = 0;
+          let completedAudits = 0;
+          let pendingAudits = 0;
+          let overdueAudits = 0;
 
           records.forEach((record) => {
-            if (record.kanbanRecords) {
+            if (record.auditData) {
               try {
-                const kanban = JSON.parse(record.kanbanRecords);
-                aiPersonalizedTreatment += kanban.columns.some(
-                  (column) => column.title === "AI Personalized Treatment",
-                )
-                  ? 1
-                  : 0;
-                totalScreenings += kanban.tasks.length;
-                completedScreenings += kanban.tasks.filter(
-                  (task) => task.columnId === "done",
+                const audit = JSON.parse(record.auditData);
+                motorSpecifications += record.motorSpecs ? 1 : 0;
+                auditReports += audit.tasks.length;
+                completedAudits += audit.tasks.filter(
+                  (task) => task.columnId === "done"
                 ).length;
-                pendingScreenings += kanban.tasks.filter(
-                  (task) => task.columnId === "doing",
+                pendingAudits += audit.tasks.filter(
+                  (task) => task.columnId === "doing"
                 ).length;
-                overdueScreenings += kanban.tasks.filter(
-                  (task) => task.columnId === "overdue",
+                overdueAudits += audit.tasks.filter(
+                  (task) => task.columnId === "overdue"
                 ).length;
               } catch (error) {
-                console.error("Failed to parse kanbanRecords:", error);
+                console.error("Failed to parse auditData:", error);
               }
             }
           });
 
           setMetrics({
             totalFolders,
-            aiPersonalizedTreatment,
-            totalScreenings,
-            completedScreenings,
-            pendingScreenings,
-            overdueScreenings,
+            motorSpecifications,
+            auditReports,
+            completedAudits,
+            pendingAudits,
+            overdueAudits,
           });
         })
         .catch((e) => {
@@ -78,54 +73,46 @@ const DisplayInfo = () => {
 
   const metricsData = [
     {
-      title: "Specialist Appointments Pending",
-      subtitle: "View",
-      value: metrics.pendingScreenings,
-      icon: IconHourglassHigh,
-      onClick: () => navigate("/appointments/pending"),
-    },
-    {
-      title: "Treatment Progress Update",
-      subtitle: "View",
-      value: `${metrics.completedScreenings} of ${metrics.totalScreenings}`,
-      icon: IconCircleDashedCheck,
-
-      onClick: () => navigate("/treatment/progress"),
-    },
-    {
-      title: "Total Folders",
+      title: "Total Motor Folders",
       subtitle: "View",
       value: metrics.totalFolders,
       icon: IconFolder,
       onClick: () => navigate("/folders"),
     },
     {
-      title: "Total Screenings",
+      title: "Motor Specifications",
       subtitle: "View",
-      value: metrics.totalScreenings,
-      icon: IconUserScan,
-      onClick: () => navigate("/screenings"),
+      value: metrics.motorSpecifications,
+      icon: IconTools,
+      onClick: () => navigate("/motor-specifications"),
     },
     {
-      title: "Completed Screenings",
+      title: "Audit Reports",
       subtitle: "View",
-      value: metrics.completedScreenings,
-      icon: IconCircleDashedCheck,
-      onClick: () => navigate("/screenings/completed"),
+      value: metrics.auditReports,
+      icon: IconFileText,
+      onClick: () => navigate("/audit-reports"),
     },
     {
-      title: "Pending Screenings",
+      title: "Completed Audits",
       subtitle: "View",
-      value: metrics.pendingScreenings,
-      icon: IconHourglassHigh,
-      onClick: () => navigate("/screenings/pending"),
+      value: metrics.completedAudits,
+      icon: IconClipboardCheck,
+      onClick: () => navigate("/audits/completed"),
     },
     {
-      title: "Overdue Screenings",
+      title: "Pending Audits",
       subtitle: "View",
-      value: metrics.overdueScreenings,
+      value: metrics.pendingAudits,
       icon: IconAlertCircle,
-      onClick: () => navigate("/screenings/overdue"),
+      onClick: () => navigate("/audits/pending"),
+    },
+    {
+      title: "Overdue Audits",
+      subtitle: "View",
+      value: metrics.overdueAudits,
+      icon: IconAlertCircle,
+      onClick: () => navigate("/audits/overdue"),
     },
   ];
 
@@ -147,3 +134,4 @@ const DisplayInfo = () => {
 };
 
 export default DisplayInfo;
+  

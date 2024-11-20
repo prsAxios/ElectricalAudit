@@ -78,7 +78,7 @@ const Index = () => {
         onClick={handleOpenModal}
       >
         <IconCirclePlus />
-        Create Record
+        Create Audit report
       </button>
 
       <CreateRecordModal
